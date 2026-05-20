@@ -1,0 +1,48 @@
+digraph PythiaEvent {
+  label="PYTHIA event 5535";
+  labelloc=t;
+  rankdir=LR;
+  graph [fontsize=18, overlap=false, splines=true];
+  node [fontname=Helvetica, fontsize=10, margin=0.06];
+  edge [arrowsize=0.7];
+
+  n21 [label="21: b\nstatus=52, scale=0.602\nE=30.477\npx=4.231\n(py,pz,mass)=27.289,11.966,4.800)\ncol=(101,0)", shape=box];
+  n20 [label="20: u\nstatus=51, scale=0.602\nE=2.323\npx=-1.973\n(py,pz,mass)=-0.758,0.905,0.330)\ncol=(109,0)", shape=box];
+  n19 [label="19: ubar\nstatus=51, scale=0.602\nE=1.150\npx=-0.333\n(py,pz,mass)=-0.386,0.977,0.330)\ncol=(0,101)", shape=box];
+  n18 [label="18: b\nstatus=-52, scale=0.888\nE=30.705\npx=4.267\n(py,pz,mass)=27.499,12.055,4.800)\ncol=(101,0)", shape=ellipse];
+  n17 [label="17: g\nstatus=-51, scale=0.888\nE=3.246\npx=-2.342\n(py,pz,mass)=-1.354,1.793,0.000)\ncol=(109,101)", shape=ellipse];
+  n16 [label="16: g\nstatus=51, scale=0.888\nE=1.615\npx=-1.461\n(py,pz,mass)=-0.588,-0.360,0.000)\ncol=(108,109)", shape=box];
+  n15 [label="15: b\nstatus=-52, scale=0.906\nE=30.955\npx=4.306\n(py,pz,mass)=27.730,12.154,4.800)\ncol=(101,0)", shape=ellipse];
+  n14 [label="14: g\nstatus=51, scale=0.906\nE=44.175\npx=-40.543\n(py,pz,mass)=-16.806,5.018,0.000)\ncol=(102,108)", shape=box];
+  n13 [label="13: g\nstatus=-51, scale=0.906\nE=4.611\npx=-3.842\n(py,pz,mass)=-2.172,1.334,0.000)\ncol=(108,101)", shape=ellipse];
+  n12 [label="12: g\nstatus=-52, scale=28.8\nE=48.719\npx=-44.396\n(py,pz,mass)=-19.040,6.326,0.000)\ncol=(102,101)", shape=ellipse];
+  n11 [label="11: bbar\nstatus=51, scale=28.8\nE=45.260\npx=40.079\n(py,pz,mass)=-8.751,-18.506,4.800)\ncol=(0,102)", shape=box];
+  n10 [label="10: b\nstatus=-51, scale=28.8\nE=31.022\npx=4.316\n(py,pz,mass)=27.791,12.180,4.800)\ncol=(101,0)", shape=ellipse];
+  n9 [label="9: g\nstatus=-23, scale=125\nE=62.500\npx=-56.954\n(py,pz,mass)=-24.426,8.115,0.000)\ncol=(102,101)", shape=doublecircle];
+  n8 [label="8: g\nstatus=-23, scale=125\nE=62.500\npx=56.954\n(py,pz,mass)=24.426,-8.115,0.000)\ncol=(101,102)", shape=doublecircle];
+  n5 [label="5: h0\nstatus=-22, scale=125\nE=125.000\npx=0.000\n(py,pz,mass)=0.000,0.000,125.000)\ncol=(0,0)", shape=doublecircle];
+  n4 [label="4: e+\nstatus=-21, scale=125\nE=62.500\npx=0.000\n(py,pz,mass)=0.000,-62.500,0.000)\ncol=(0,0)", shape=doublecircle];
+  n3 [label="3: e-\nstatus=-21, scale=125\nE=62.500\npx=0.000\n(py,pz,mass)=0.000,62.500,0.000)\ncol=(0,0)", shape=doublecircle];
+
+  n3 -> n5;
+  n4 -> n5;
+  n5 [ordering=out];
+  n5 -> n9;
+  n5 -> n8;
+  n8 [ordering=out];
+  n8 -> n11;
+  n8 -> n10;
+  n9 -> n12 [label="Q=58.7, z=0.407, recoil for 8→10,11", fontsize=9];
+  n10 -> n15 [label="Q=3.07, z=0.0963, recoil for 12→13,14", fontsize=9];
+  n12 [ordering=out];
+  n12 -> n14;
+  n12 -> n13;
+  n13 [ordering=out];
+  n13 -> n17;
+  n13 -> n16;
+  n15 -> n18 [label="Q=1.83, z=0.381, recoil for 13→16,17", fontsize=9];
+  n17 [ordering=out];
+  n17 -> n20;
+  n17 -> n19;
+  n18 -> n21 [label="Q=1.38, z=0.287, recoil for 17→19,20", fontsize=9];
+}
