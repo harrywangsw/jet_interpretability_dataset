@@ -1,0 +1,2 @@
+event,radiator,recoiler_before,recoiler_after,daughter_b,daughter_c,radiator_pid,daughter_b_pid,daughter_c_pid,recoiler_pid,scale,Q,Q2,z,z_lab,residual
+64,10,19,22,20,21,4,4,22,-4,0.531000018119812,1.0880234990849522,1.1837951345610631,0.863643840176244,0.861967694866704,0.0017320521762979873

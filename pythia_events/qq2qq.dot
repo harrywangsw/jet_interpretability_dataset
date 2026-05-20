@@ -1,0 +1,42 @@
+digraph PythiaEvent {
+  label="PYTHIA event 0";
+  labelloc=t;
+  rankdir=LR;
+  graph [fontsize=18, overlap=false, splines=true];
+  node [fontname=Helvetica, fontsize=10, margin=0.06];
+  edge [arrowsize=0.7];
+
+  n18 [label="18: g\nstatus=62, scale=0.515\nE=20.747\npx=0.148\n(py,pz,mass)=0.315,-20.744,0.000)", shape=box];
+  n17 [label="17: g\nstatus=62, scale=0.515\nE=31.816\npx=-0.298\n(py,pz,mass)=-0.760,-31.805,0.000)", shape=box];
+  n16 [label="16: d\nstatus=62, scale=0.515\nE=239.916\npx=1.070\n(py,pz,mass)=-0.849,-239.912,0.330)", shape=box];
+  n15 [label="15: ubar\nstatus=62, scale=0.799\nE=8.178\npx=-0.920\n(py,pz,mass)=1.294,-8.016,0.330)", shape=box];
+  n12 [label="12: d\nstatus=-52, scale=0.515\nE=239.916\npx=1.070\n(py,pz,mass)=-0.849,-239.912,0.330)", shape=ellipse];
+  n11 [label="11: g\nstatus=-51, scale=0.515\nE=31.816\npx=-0.298\n(py,pz,mass)=-0.760,-31.805,0.000)", shape=ellipse];
+  n10 [label="10: g\nstatus=-51, scale=0.515\nE=20.747\npx=0.148\n(py,pz,mass)=0.315,-20.744,0.000)", shape=ellipse];
+  n9 [label="9: ubar\nstatus=-52, scale=0.799\nE=8.178\npx=-0.920\n(py,pz,mass)=1.294,-8.016,0.330)", shape=ellipse];
+  n8 [label="8: g\nstatus=-51, scale=0.799\nE=8.146\npx=-0.351\n(py,pz,mass)=-0.289,-8.133,0.000)", shape=ellipse];
+  n7 [label="7: d\nstatus=-51, scale=0.799\nE=284.334\npx=1.271\n(py,pz,mass)=-1.005,-284.329,0.330)", shape=ellipse];
+  n6 [label="6: ubar\nstatus=-23, scale=1.71\nE=8.752\npx=-0.990\n(py,pz,mass)=1.393,-8.577,0.330)", shape=doublecircle];
+  n5 [label="5: d\nstatus=-23, scale=1.71\nE=291.906\npx=0.990\n(py,pz,mass)=-1.393,-291.900,0.330)", shape=doublecircle];
+  n4 [label="4: d\nstatus=-21, scale=1.71\nE=300.568\npx=0.000\n(py,pz,mass)=0.000,-300.568,0.000)", shape=doublecircle];
+  n3 [label="3: ubar\nstatus=-21, scale=1.71\nE=0.090\npx=0.000\n(py,pz,mass)=0.000,0.090,0.000)", shape=doublecircle];
+
+  n3 [ordering=out];
+  n3 -> n6;
+  n3 -> n5;
+  n4 [ordering=out];
+  n4 -> n6;
+  n4 -> n5;
+  n5 [ordering=out];
+  n5 -> n8;
+  n5 -> n7;
+  n6 -> n9 [label="Q=2.76, z=0.909, recoil for 5→7,8", fontsize=9];
+  n7 -> n12 [label="Q=1.09, z=0.338, recoil for 8→10,11", fontsize=9];
+  n8 [ordering=out];
+  n8 -> n11;
+  n8 -> n10;
+  n9 -> n15;
+  n10 -> n18;
+  n11 -> n17;
+  n12 -> n16;
+}
