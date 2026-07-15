@@ -33,7 +33,7 @@ Then in Python:
     import torch
     data = torch.load("events.pt")
     ids = data["id"]              # LongTensor [E, Nmax]
-    p4 = data["p4"]               # FloatTensor [E, Nmax, 4], columns px,py,pz,E
+    p4 = data["p4"]               # FloatTensor [E, Nmax, 4], default columns E,px,py,pz
     mask = data["mask"]           # BoolTensor [E, Nmax], true for real particles
     final = data["status"] > 0    # PYTHIA convention: final-state particles usually status > 0
 """
@@ -357,7 +357,8 @@ def events_to_tensors(
     keep_status: Optional[str] = None,
     dtype: torch.dtype = torch.float32,
     metadata_extra: Optional[dict] = None,
-) -> dict[str, torch.Tensor | list[list[str]] | dict]:
+    p4_only: bool = False,
+) -> torch.Tensor | dict[str, torch.Tensor | list[list[str]] | dict]:
     """
     Convert parsed events to padded PyTorch tensors.
 
@@ -366,8 +367,14 @@ def events_to_tensors(
         "final"  keep particles with status > 0
         "hard"   keep particles with |status| in a rough PYTHIA hard-process range 20..29
 
-    The returned dict contains both tensors and names. Particle names are kept as
-    nested Python lists because strings are not PyTorch tensor data.
+    By default, the returned dict contains both tensors and names. Particle names
+    are kept as nested Python lists because strings are not PyTorch tensor data.
+
+    If p4_only=True, return only the padded four-momentum tensor with shape
+
+        [num_events, max_particles, 4]
+
+    and no metadata/mask/particle labels. Padding rows are all zeros.
     """
     if keep_status not in {None, "final", "hard"}:
         raise ValueError("keep_status must be one of: None, 'final', 'hard'")
@@ -408,17 +415,23 @@ def events_to_tensors(
             mothers[i, j] = torch.tensor([p.mother1, p.mother2], dtype=torch.long)
             daughters[i, j] = torch.tensor([p.daughter1, p.daughter2], dtype=torch.long)
             colors[i, j] = torch.tensor([p.color1, p.color2], dtype=torch.long)
-            p4[i, j] = torch.tensor([p.px, p.py, p.pz, p.energy], dtype=dtype)
+            p4[i, j] = torch.tensor([p.energy, p.px, p.py, p.pz], dtype=dtype)
             mass[i, j] = p.mass
             mask[i, j] = True
             scale[i, j] = p.scale
             event_names.append(p.name)
         names.append(event_names)
 
+    p4_columns = ["E", "px", "py", "pz"]
+
+    if p4_only:
+        return p4
+
     metadata = {
         "num_events": num_events,
         "max_particles": max_particles,
-        "p4_columns": ["px", "py", "pz", "E"],
+        "p4_columns": p4_columns,
+        "p4_order": "E_px_py_pz",
     }
     if metadata_extra:
         metadata.update(metadata_extra)
@@ -451,7 +464,21 @@ def save_json_sidecar(events: list[Event], out_json: Path) -> None:
     out_json.write_text(json.dumps(serializable, indent=2), encoding="utf-8")
 
 
-def summarize(data: dict) -> str:
+def summarize(data: dict | torch.Tensor) -> str:
+    if torch.is_tensor(data):
+        lines = []
+        lines.append(f"saved tensor shape: {tuple(data.shape)}")
+        if data.ndim == 3 and data.shape[-1] == 4:
+            lines.append("p4 columns: E, px, py, pz")
+            nonzero = torch.any(data != 0, dim=-1)
+            counts = nonzero.sum(dim=1) if data.shape[0] > 0 else torch.tensor([])
+            if data.shape[0] > 0:
+                lines.append(
+                    f"nonzero four-vectors/event: min={counts.min().item()}, "
+                    f"mean={counts.float().mean().item():.2f}, max={counts.max().item()}"
+                )
+        return "\n".join(lines)
+
     mask = data["mask"]
     pid = data["pid"]
     status = data["status"]
@@ -459,6 +486,7 @@ def summarize(data: dict) -> str:
 
     num_events = data["metadata"]["num_events"]
     max_particles = data["metadata"]["max_particles"]
+    p4_columns = data.get("metadata", {}).get("p4_columns", ["E", "px", "py", "pz"])
     counts = mask.sum(dim=1) if num_events > 0 else torch.tensor([])
 
     lines = []
@@ -479,7 +507,12 @@ def summarize(data: dict) -> str:
             lines.append("most common PDG ids: " + ", ".join(pairs))
         finite_p4 = p4[mask]
         if finite_p4.numel() > 0:
-            pt = torch.sqrt(finite_p4[:, 0] ** 2 + finite_p4[:, 1] ** 2)
+            if p4_columns == ["E", "px", "py", "pz"]:
+                px_col, py_col = 1, 2
+            else:
+                px_col, py_col = 0, 1
+            pt = torch.sqrt(finite_p4[:, px_col] ** 2 + finite_p4[:, py_col] ** 2)
+            lines.append(f"p4 columns: {p4_columns}")
             lines.append(f"pT range: [{pt.min().item():.6g}, {pt.max().item():.6g}]")
     return "\n".join(lines)
 
@@ -500,6 +533,15 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
         "--float64",
         action="store_true",
         help="Store floating tensors as float64 instead of float32",
+    )
+    parser.add_argument(
+        "--only-p4",
+        action="store_true",
+        help=(
+            "Only save the padded four-momentum tensor instead of the full event-record dict. "
+            "With this option, the saved tensor has shape [events, max_particles, 4] and "
+            "columns [E, px, py, pz]. Padding rows are zeros."
+        ),
     )
     parser.add_argument(
         "--randomize-branching-daughter-nos",
@@ -567,12 +609,25 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
 
     keep_status = None if args.keep_status == "all" else args.keep_status
     dtype = torch.float64 if args.float64 else torch.float32
+
+    metadata_extra.update({
+        "only_p4": bool(args.only_p4),
+    })
+
     data = events_to_tensors(
         events,
         keep_status=keep_status,
         dtype=dtype,
         metadata_extra=metadata_extra,
+        p4_only=args.only_p4,
     )
+    
+    # print(data["p4"].shape)
+    # # print(data["p4"])
+    # my_momentum_p3 = data['p4'][..., 1:4]
+    # print(my_momentum_p3)
+    # my_momentum_sum = torch.linalg.norm(my_momentum_p3.sum(dim=1), dim=-1)
+    # print("my momentum sum:", my_momentum_sum.mean().item(), my_momentum_sum.max().item(), my_momentum_sum.min().item())
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     torch.save(data, args.output)

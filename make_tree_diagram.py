@@ -116,7 +116,7 @@ def collect_event_particles(data: dict, event_index: int) -> list[dict]:
         no = int(no_field[j].item()) if no_field is not None else j + 1
         this_pid = int(pid[j].item())
         p4_vec = p4[j].to(dtype=torch.float64).clone()
-        px, py, pz, energy = [float(v) for v in p4_vec.tolist()]
+        energy, px, py, pz = [float(v) for v in p4_vec.tolist()]
         pt, eta, phi = p4_kinematics(px, py, pz)
 
         particle = {
@@ -173,14 +173,14 @@ def build_edges(particles: list[dict]) -> list[tuple[int, int]]:
 
 # ---------------------------------------------------------------------------
 # Four-vector helpers for recoiler-label reconstruction.
-# Convention: (px, py, pz, E).
+# Convention: (E, px, py, pz).
 # ---------------------------------------------------------------------------
 
 
 def p4_tensor(p: dict) -> torch.Tensor:
     if "p4" in p and torch.is_tensor(p["p4"]):
         return p["p4"].to(dtype=torch.float64)
-    return torch.tensor([p["px"], p["py"], p["pz"], p["energy"]], dtype=torch.float64)
+    return torch.tensor([p["energy"], p["px"], p["py"], p["pz"]], dtype=torch.float64)
 
 
 def add_p4(*vecs: torch.Tensor) -> torch.Tensor:
@@ -199,7 +199,7 @@ def p4_norm(v: torch.Tensor) -> float:
 
 def inv_mass2(v: torch.Tensor) -> float:
     v = v.to(dtype=torch.float64)
-    return float((v[3] * v[3] - torch.dot(v[:3], v[:3])).item())
+    return float((v[0] * v[0] - torch.dot(v[1:4], v[1:4])).item())
 
 
 def children_by_mother(edges: list[tuple[int, int]]) -> dict[int, list[int]]:
@@ -213,11 +213,11 @@ def boost_to_rest_frame(p4: torch.Tensor, total_p4: torch.Tensor) -> torch.Tenso
     """Boost p4 into the rest frame of total_p4. Convention: (px, py, pz, E)."""
     p4 = p4.to(dtype=torch.float64)
     total_p4 = total_p4.to(dtype=torch.float64)
-    total_e = total_p4[3]
+    total_e = total_p4[0]
     if abs(float(total_e)) < 1e-15:
         return p4.clone()
 
-    beta = total_p4[:3] / total_e
+    beta = total_p4[1:4] / total_e
     beta2 = torch.dot(beta, beta)
     beta2_float = float(beta2.item())
     if beta2_float < 1e-30:
@@ -226,8 +226,8 @@ def boost_to_rest_frame(p4: torch.Tensor, total_p4: torch.Tensor) -> torch.Tenso
         return p4.clone()
 
     gamma = 1.0 / math.sqrt(1.0 - beta2_float)
-    p_vec = p4[:3]
-    e = p4[3]
+    p_vec = p4[1:4]
+    e = p4[0]
     beta_dot_p = torch.dot(beta, p_vec)
 
     e_prime = gamma * (e - beta_dot_p)
@@ -270,13 +270,13 @@ def reconstructed_z_for_branch(
     pb_star = boost_to_rest_frame(pb, dipole_total)
     pc_star = boost_to_rest_frame(pc, dipole_total)
 
-    denom_star = float((pb_star[3] + pc_star[3]).item())
-    denom_lab = float((pb[3] + pc[3]).item())
+    denom_star = float((pb_star[0] + pc_star[0]).item())
+    denom_lab = float((pb[0] + pc[0]).item())
     if denom_star <= 0 or denom_lab <= 0:
         return float("nan"), float("nan"), b, c
 
-    z_star = float((pb_star[3] / (pb_star[3] + pc_star[3])).item())
-    z_lab = float((pb[3] / (pb[3] + pc[3])).item())
+    z_star = float((pb_star[0] / (pb_star[0] + pc_star[0])).item())
+    z_lab = float((pb[0] / (pb[0] + pc[0])).item())
     return z_star, z_lab, b, c
 
 
@@ -502,10 +502,10 @@ def node_label(
     ]
     if label_kinematics:
         lines.append(f"E={float(p['energy']):.3f}")
-        lines.append(f"px={float(p['px']):.3f}")
         lines.append(
-            f"(py,pz,mass)={float(p['py']):.3f},{float(p['pz']):.3f},{float(p.get('mass', float('nan'))):.3f})"
+            f"(px,py,pz)={float(p['px']):.3f}, {float(p['py']):.3f},{float(p['pz']):.3f})"
         )
+        lines.append(f"mass={float(p.get('mass', float('nan'))):.3f}")
     if label_colors and "color1" in p:
         lines.append(f"col=({p['color1']},{p['color2']})")
     if label_momentum:
